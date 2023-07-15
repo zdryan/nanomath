@@ -1,0 +1,87 @@
+version: 2.1
+orbs:
+  gh: circleci/github-cli@2.2.0
+jobs:
+  build_and_test:
+    docker:
+      - image: ubuntu:lunar
+    environment:
+        CC: /usr/bin/gcc-13
+        CXX: /usr/bin/g++-13
+    steps:
+      - checkout
+      - run:
+            name: Install dependencies
+            command: |
+                apt-get update
+                apt-get install -y git curl libcurl4-openssl-dev cmake clang-format g++-13
+      - run:
+            name: Check clang-format
+            command: |
+                find src test -iname '*.hpp' -or -iname '*.cpp' | while read fname; do 
+                  result=$(clang-format --style=file --dry-run --Werror $fname)
+                  if [[ $result -ne 0 ]]
+                  then
+                    echo "$fname did not pass clang-format"
+                    exit 1
+                  fi
+                done
+      - run: 
+            name: Generate and build
+            command: |
+                mkdir -p /tmp/binaries
+                cmake -S . -B build -DBUILD_TESTS=1
+                make -C build
+                cp build/nanomath /tmp/binaries
+      - run:
+            name: Test
+            command: ctest --test-dir build
+      - persist_to_workspace:
+            root: /tmp/binaries
+            paths:
+              - nanomath
+  release:
+    docker:
+      - image: cimg/base:stable
+    steps:
+      - attach_workspace:
+          at: /tmp/binaries
+      - checkout
+      - run:
+          name: Install depednencies
+          command: |
+              sudo apt-get update
+              sudo apt-get install -y binutils bzip2 tar
+      - run:
+          name: Archive
+          command: |
+            mkdir -p nanomath-$CIRCLE_TAG-linux/
+            cp /tmp/binaries/nanomath nanomath-$CIRCLE_TAG-linux/
+            tar cvfj nanomath-$CIRCLE_TAG-linux.tar.bz2 nanomath-$CIRCLE_TAG-linux/
+      - gh/setup
+      - run:
+          name: Create release
+          command: gh release create $CIRCLE_TAG
+      - run:
+          name: Upload artifact(s)
+          command: gh release upload $CIRCLE_TAG nanomath-$CIRCLE_TAG-linux.tar.bz2 
+
+_tagged: &tagged
+  filters:
+    tags:
+      only: /^v.*/
+    branches:
+      ignore: /.*/
+
+workflows:
+  build-test:
+    jobs:
+      - build_and_test
+  build-test-release:
+    jobs:
+      - build_and_test:
+          <<: *tagged
+      - release:
+          <<: *tagged
+          requires:
+            - build_and_test
