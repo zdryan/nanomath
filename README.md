@@ -1,8 +1,8 @@
 # nanomath
 > dead simple timestamp arithmetic :clock10:
 
-[![build](https://dl.circleci.com/status-badge/img/gh/zdryan/nanomath/tree/develop.svg?style=shield&circle-token=8c8e2eb77ff0c50b0691c599af98998751d38785)](https://dl.circleci.com/status-badge/redirect/gh/zdryan/nanomath/tree/develop)
-[![License: Unlicense](https://img.shields.io/badge/license-Unlicense-blue.svg)](http://unlicense.org/)
+[![CircleCI](https://dl.circleci.com/status-badge/img/gh/zdryan/nanomath/tree/main.svg?style=shield)](https://dl.circleci.com/status-badge/redirect/gh/zdryan/nanomath/tree/main)
+[![License: Unlicense](https://img.shields.io/badge/license-Unlicense-blue.svg)]()
 
 ```bash
 # ISO 8601 (default)
