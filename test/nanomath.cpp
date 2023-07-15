@@ -1,6 +1,5 @@
 #include "nanomath.hpp"
 #include <gtest/gtest.h>
-#include <stdexcept>
 
 namespace nanomath::test
 {
