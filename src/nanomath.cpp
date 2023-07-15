@@ -1,14 +1,10 @@
 #include "nanomath.hpp"
 #include <argparse/argparse.hpp>
-#include <chrono>
-#include <cstdlib>
-#include <exception>
 
 int main(int argc, char *argv[])
 {
     argparse::ArgumentParser parser{"nanomath"};
     parser.add_argument("--format").default_value(std::string{"iso"}).help("output format");
-    parser.add_argument("--leap").default_value(false).implicit_value(true);
     parser.add_argument("expression");
 
     std::string expression, format;
