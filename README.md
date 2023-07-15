@@ -15,7 +15,7 @@ nanomath --format ns '2004-11-23T12:30:00Z + 4Y - 10D - (12h + 30m)' # 122644800
 nanomath --format m '2008-11-12T00:00:00Z - 2004-11-23T12:30:00Z' # 2087250m
 ```
 
-- Supports `ns` (nanoseconds), `us` (microseconds), `ms` (milliseconds), `s` (seconds), `m` (minutes), `h` (hours), `D` (days), `W` (weeks), `M` (months) and `Y` (years) suffixes.
+- Supports `ns`, `us`, `ms`, `s`, `m`, `h`, `D`, `W`, `M` and `Y` suffixes.
 - Timezone designators (according to the following [TZ identifiers](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones)) are supported, albeit with minimal testing.
 
 :wrench: *nanomath* is currently under active development. 
