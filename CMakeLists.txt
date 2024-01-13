@@ -9,7 +9,7 @@ FetchContent_Declare(argparse GIT_REPOSITORY https://github.com/p-ranav/argparse
 FetchContent_MakeAvailable(argparse)
 FetchContent_Declare(date GIT_REPOSITORY https://github.com/HowardHinnant/date.git GIT_TAG v3.0.1)
 set(CMAKE_POLICY_DEFAULT_CMP0077 NEW)
-set(USE_SYSTEM_TZ_DB ON)
+option(USE_SYSTEM_TZ_DB "Use OS timezone database" ON)
 set(BUILD_TZ_LIB ON)
 FetchContent_MakeAvailable(date)
 
