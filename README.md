@@ -6,7 +6,7 @@
 
 ```bash
 # ISO 8601 (default)
-nanomath '2004-11-23T12:30:00Z + 4Y - 10D - (12h + 30m)' # 2008-11-12T00:00:00Z
+nanomath '2004-11-23T12:30:00 Australia/Sydney + 4Y - 10D - (12h + 30m)' # 2008-11-11T13:00:00Z
 
 # or with given unit
 nanomath --format ns '2004-11-23T12:30:00Z + 4Y - 10D - (12h + 30m)' # 1226448000000000000ns
