@@ -4,15 +4,17 @@
 int main(int argc, char *argv[])
 {
     argparse::ArgumentParser parser{"nanomath"};
-    parser.add_argument("--format").default_value(std::string{"iso"}).help("output format");
+    parser.add_argument("--format").help("output format [ns | ms | s | m | h | D | W | M | Y]");
     parser.add_argument("expression");
 
     std::string expression, format;
+    const auto formatted = parser.is_used("--format");
     try
     {
         parser.parse_args(argc, argv);
         expression = parser.get<std::string>("expression");
-        format = parser.get<std::string>("--format");
+        if (formatted)
+            format = parser.get<std::string>("--format");
     }
     catch (const std::runtime_error &err)
     {
@@ -22,9 +24,11 @@ int main(int argc, char *argv[])
 
     try
     {
-        const auto duration = nanomath::parse(expression);
-        const auto sys_time = std::chrono::sys_time<std::chrono::nanoseconds>(duration);
-        std::cout << nanomath::format(sys_time, format) << std::endl;
+        const auto ns = nanomath::parse(expression);
+        if (formatted)
+            std::cout << nanomath::format(ns, nanomath::string_to_unit(format)) << std::endl;
+        else
+            std::cout << nanomath::format(ns) << std::endl;
     }
     catch (const std::format_error &err)
     {

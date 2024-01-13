@@ -3,6 +3,7 @@
 #include "date/date.h"
 #include "date/tz.h"
 #include <chrono>
+#include <cmath>
 #include <concepts>
 #include <format>
 #include <ranges>
@@ -45,9 +46,10 @@ enum class Unit
 inline Unit string_to_unit(std::string_view unit)
 {
     // clang-format off
-    static std::unordered_map<std::string_view, Unit> units =
+    static const std::unordered_map<std::string_view, Unit> units =
     {
         {"ns", Unit::NANOSECONDS},
+	{"µs", Unit::MICROSECONDS},
         {"us", Unit::MICROSECONDS},
         {"ms", Unit::MILLISECONDS},
         {"s", Unit::SECONDS},
@@ -61,7 +63,7 @@ inline Unit string_to_unit(std::string_view unit)
     // clang-format on
     if (units.contains(unit))
         return units.at(unit);
-    throw std::runtime_error(std::format("unknown unit [{}]", unit));
+    throw std::format_error(std::format("unknown unit: '[{}]'", unit));
 }
 
 inline constexpr int64_t factor(Unit unit)
@@ -92,34 +94,46 @@ inline constexpr int64_t factor(Unit unit)
     __builtin_unreachable();
 }
 
-inline std::string format(const std::chrono::sys_time<std::chrono::nanoseconds> &time_point, std::string_view type)
+template <typename... Args> inline std::string format(double count, std::string_view unit)
 {
-    if (type == "iso")
-        return std::format("{:%Y-%m-%d %H:%M:%S}", time_point);
+    double int_count;
+    if (std::modf(count, &int_count) != 0)
+        return std::format("{:.2f}{}", count, unit);
+    else
+        return std::format("{}{}", static_cast<int64_t>(count), unit);
+}
 
-    const auto time_since_epoch = time_point.time_since_epoch();
-    switch (string_to_unit(type))
+inline std::string format(const std::chrono::nanoseconds &nanos)
+{
+    const auto time_point = std::chrono::sys_time<std::chrono::nanoseconds>(nanos);
+    return std::format("{:%Y-%m-%dT%H:%M:%S}Z", std::chrono::time_point_cast<std::chrono::seconds>(time_point));
+}
+
+inline std::string format(const std::chrono::nanoseconds &nanos, Unit unit)
+{
+    std::ostringstream oss;
+    switch (unit)
     {
     case Unit::NANOSECONDS:
-        return std::format("{}ns", time_since_epoch.count());
+        return std::format("{}ns", nanos.count());
     case Unit::MICROSECONDS:
-        return std::format("{}us", std::chrono::duration_cast<std::chrono::microseconds>(time_since_epoch).count());
+        return format(nanos.count() / static_cast<double>(MICROSECONDS), "us");
     case Unit::MILLISECONDS:
-        return std::format("{}ms", std::chrono::duration_cast<std::chrono::milliseconds>(time_since_epoch).count());
+        return format(nanos.count() / static_cast<double>(MILLISECONDS), "ms");
     case Unit::SECONDS:
-        return std::format("{}s", std::chrono::duration_cast<std::chrono::seconds>(time_since_epoch).count());
+        return format(nanos.count() / static_cast<double>(SECONDS), "s");
     case Unit::MINUTES:
-        return std::format("{}m", std::chrono::duration_cast<std::chrono::minutes>(time_since_epoch).count());
+        return format(nanos.count() / static_cast<double>(MINUTES), "m");
     case Unit::HOURS:
-        return std::format("{}h", std::chrono::duration_cast<std::chrono::hours>(time_since_epoch).count());
+        return format(nanos.count() / static_cast<double>(HOURS), "h");
     case Unit::DAYS:
-        return std::format("{}D", std::chrono::duration_cast<std::chrono::days>(time_since_epoch).count());
+        return format(nanos.count() / static_cast<double>(DAYS), "D");
     case Unit::WEEKS:
-        return std::format("{}W", std::chrono::duration_cast<std::chrono::weeks>(time_since_epoch).count());
+        return format(nanos.count() / static_cast<double>(WEEKS), "W");
     case Unit::MONTHS:
-        return std::format("{}M", std::chrono::duration_cast<std::chrono::months>(time_since_epoch).count());
+        return format(nanos.count() / static_cast<double>(MONTHS), "M");
     case Unit::YEARS:
-        return std::format("{}Y", std::chrono::duration_cast<std::chrono::years>(time_since_epoch).count());
+        return format(nanos.count() / static_cast<double>(YEARS), "Y");
     }
     __builtin_unreachable();
 }
@@ -140,13 +154,13 @@ template <std::signed_integral T> constexpr auto sub_overflow(const T &lhs, cons
     return result;
 }
 
-inline std::string normalize_iso8601(std::string_view input)
+inline std::string replace(std::string_view input)
 {
     std::string result;
     std::match_results<decltype(input.cbegin())>::difference_type last_pos = 0;
     auto match_end = input.cbegin();
     static const auto ISO_8601_PATTERN =
-        std::regex{R"(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(Z|[+-]\d{2}:\d{2}|\s[a-zA-Z]+/[a-zA-Z]+))"};
+        std::regex{R"(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(Z|[+-]\d{2}(?::\d{2})?|\s[a-zA-Z]+/[a-zA-Z]+)?)"};
     std::cregex_iterator begin{input.cbegin(), input.cend(), ISO_8601_PATTERN}, end;
     std::for_each(begin, end, [&](const auto &match) {
         const auto pos = match.position(0);
@@ -155,36 +169,42 @@ inline std::string normalize_iso8601(std::string_view input)
         result.append(match_end, match_begin);
 
         const auto designator = match.str(1);
-        std::istringstream ss{match.str()};
-        if (std::regex_match(designator.begin(), designator.end(), std::regex{R"([+-]\d{2}:\d{2})"}))
+        std::istringstream iss{match.str()};
+        std::ostringstream oss;
+        if (designator.empty() || designator == "Z")
         {
             date::sys_time<std::chrono::nanoseconds> time;
-            ss >> date::parse("%Y-%m-%dT%H:%M:%S%z", time);
-            result.append(std::to_string(time.time_since_epoch().count()) + "ns");
+            iss >> date::parse("%Y-%m-%dT%H:%M:%S", time);
+            oss << time.time_since_epoch();
         }
-        else if (std::regex_match(designator.begin(), designator.end(), std::regex{R"((?:Z|\s[a-zA-Z]+/[a-zA-Z]+))"}))
+        else if (std::regex_match(designator.begin(), designator.end(), std::regex{R"([+-]\d{2}(?::\d{2})?)"}))
+        {
+            date::sys_time<std::chrono::nanoseconds> time;
+            iss >> date::parse("%Y-%m-%dT%H:%M:%S%z", time);
+            oss << time.time_since_epoch();
+        }
+        else if (std::regex_match(designator.begin(), designator.end(), std::regex{R"(\s[a-zA-Z]+/[a-zA-Z]+)"}))
         {
             std::string abbrev;
             date::local_time<std::chrono::nanoseconds> time;
-            ss >> date::parse("%Y-%m-%dT%H:%M:%S %Z", time, abbrev);
-            if (designator == "Z")
-            {
-                const auto count = time.time_since_epoch().count();
-                result.append(std::to_string(count) + "ns");
-            }
-            else
-            {
-                const auto count = date::locate_zone(abbrev)->to_sys(time).time_since_epoch().count();
-                result.append(std::to_string(count) + "ns");
-            }
+            iss >> date::parse("%Y-%m-%dT%H:%M:%S %Z", time, abbrev);
+            oss << date::locate_zone(abbrev)->to_sys(time).time_since_epoch();
         }
         else
         {
-            throw std::runtime_error("invalid timezone designator");
+            throw std::format_error(std::format("invalid timezone designator: '{}'", designator));
         }
+        result.append(oss.str());
 
         const auto match_len = match.length(0);
         last_pos = pos + match_len;
+        if (pos > 0 && std::isdigit(input[pos - 1]))
+            throw std::format_error(
+                std::format("invalid leading date time character: '[{}]{}'", input[pos - 1], match.str()));
+        if (static_cast<std::size_t>(last_pos) < input.length() && std::isdigit(input[last_pos]))
+            throw std::format_error(
+                std::format("invalid trailing date time character: '{}[{}]'", match.str(), input[last_pos]));
+
         match_end = match_begin;
         std::advance(match_end, match_len);
     });
@@ -216,10 +236,10 @@ inline std::pair<int64_t, std::size_t> parse_duration(std::string_view input)
 
 inline std::chrono::nanoseconds parse(std::string_view expression)
 {
-    const auto normalized = nanomath::normalize_iso8601(expression);
+    const auto replaced = nanomath::replace(expression);
     std::stack<char> operators;
     std::stack<int64_t> operands;
-    auto begin = normalized.cbegin();
+    auto begin = replaced.cbegin();
 
     const auto evaluate = [&]() {
         const auto rhs = operands.top();
@@ -235,7 +255,7 @@ inline std::chrono::nanoseconds parse(std::string_view expression)
         operators.pop();
     };
 
-    while (begin != normalized.cend())
+    while (begin != replaced.cend())
     {
         if (std::isspace(*begin))
         {
@@ -243,7 +263,7 @@ inline std::chrono::nanoseconds parse(std::string_view expression)
         }
         else if (std::isdigit(*begin))
         {
-            const auto [count, len] = parse_duration(std::string_view{begin, normalized.cend()});
+            const auto [count, len] = parse_duration(std::string_view{begin, replaced.cend()});
             operands.push(count);
             begin += len;
         }
@@ -267,7 +287,7 @@ inline std::chrono::nanoseconds parse(std::string_view expression)
         }
         else
         {
-            throw std::runtime_error(std::format("invalid expression: '{}'", expression));
+            throw std::format_error(std::format("invalid expression: '{}'", expression));
         }
     }
 
