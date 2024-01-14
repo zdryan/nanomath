@@ -31,7 +31,10 @@ jobs:
             command: |
                 mkdir -p /tmp/binaries
                 cmake -S . -B build -DUSE_SYSTEM_TZ_DB=0 -DBUILD_TESTS=1
-                make -C build
+                make -C build nanomath_test
+                cp build/nanomath_test /tmp/binaries
+                cmake -S . -B build -DUSE_SYSTEM_TZ_DB=1
+                make -C build nanomath
                 cp build/nanomath /tmp/binaries
       - run:
             name: Test
