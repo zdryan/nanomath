@@ -2,8 +2,8 @@
 
 #include "date/date.h"
 #include "date/tz.h"
-#include "fmt/format.h"
 #include "fmt/chrono.h"
+#include "fmt/format.h"
 #include <chrono>
 #include <cmath>
 #include <concepts>
@@ -107,7 +107,8 @@ template <typename... Args> inline std::string format(double count, std::string_
 inline std::string format(const std::chrono::nanoseconds &nanos)
 {
     const auto time_point = std::chrono::sys_time<std::chrono::nanoseconds>(nanos);
-    return fmt::format("{:%Y-%m-%dT%H:%M:%S}Z", fmt::gmtime(std::chrono::time_point_cast<std::chrono::seconds>(time_point)));
+    return fmt::format("{:%Y-%m-%dT%H:%M:%S}Z",
+                       fmt::gmtime(std::chrono::time_point_cast<std::chrono::seconds>(time_point)));
 }
 
 inline std::string format(const std::chrono::nanoseconds &nanos, Unit unit)

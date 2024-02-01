@@ -20,16 +20,15 @@ nanomath --format m '2008-11-12T00:00:00Z - 2004-11-23T12:30:00Z' # 2087250m
 
 :wrench: *nanomath* is currently under active development. 
 
-## Build
+## Download
+```bash
+wget https://github.com/zdryan/nanomath/releases/download/v2024.02.01/nanomath-v2024.02.01-linux.tar.bz2
+tar -xf nanomath-v2024.02.01-linux.tar.bz2
+```
+
+## Build & Install (Linux)
 ```bash
 git clone https://github.com/zdryan/nanomath
 cd nanomath
-cmake -S . -B build
-make -C build
-```
-
-## Install
-```bash
-cd nanomath
-cmake --install build
+cmake --build . --target install
 ```
