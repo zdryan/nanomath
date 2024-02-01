@@ -65,6 +65,7 @@ inline Unit string_to_unit(std::string_view unit)
     if (units.contains(unit))
         return units.at(unit);
     throw std::format_error(fmt::format("unknown unit: '[{}]'", unit));
+    __builtin_unreachable();
 }
 
 inline constexpr int64_t factor(Unit unit)
