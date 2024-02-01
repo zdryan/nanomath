@@ -2,10 +2,11 @@
 
 #include "date/date.h"
 #include "date/tz.h"
+#include "fmt/chrono.h"
+#include "fmt/format.h"
 #include <chrono>
 #include <cmath>
 #include <concepts>
-#include <format>
 #include <ranges>
 #include <regex>
 #include <stack>
@@ -63,7 +64,8 @@ inline Unit string_to_unit(std::string_view unit)
     // clang-format on
     if (units.contains(unit))
         return units.at(unit);
-    throw std::format_error(std::format("unknown unit: '[{}]'", unit));
+    throw std::runtime_error(fmt::format("unknown unit: '[{}]'", unit));
+    __builtin_unreachable();
 }
 
 inline constexpr int64_t factor(Unit unit)
@@ -98,15 +100,16 @@ template <typename... Args> inline std::string format(double count, std::string_
 {
     double int_count;
     if (std::modf(count, &int_count) != 0)
-        return std::format("{:.2f}{}", count, unit);
+        return fmt::format("{:.2f}{}", count, unit);
     else
-        return std::format("{}{}", static_cast<int64_t>(count), unit);
+        return fmt::format("{}{}", static_cast<int64_t>(count), unit);
 }
 
 inline std::string format(const std::chrono::nanoseconds &nanos)
 {
     const auto time_point = std::chrono::sys_time<std::chrono::nanoseconds>(nanos);
-    return std::format("{:%Y-%m-%dT%H:%M:%S}Z", std::chrono::time_point_cast<std::chrono::seconds>(time_point));
+    return fmt::format("{:%Y-%m-%dT%H:%M:%S}Z",
+                       fmt::gmtime(std::chrono::time_point_cast<std::chrono::seconds>(time_point)));
 }
 
 inline std::string format(const std::chrono::nanoseconds &nanos, Unit unit)
@@ -115,7 +118,7 @@ inline std::string format(const std::chrono::nanoseconds &nanos, Unit unit)
     switch (unit)
     {
     case Unit::NANOSECONDS:
-        return std::format("{}ns", nanos.count());
+        return fmt::format("{}ns", nanos.count());
     case Unit::MICROSECONDS:
         return format(nanos.count() / static_cast<double>(MICROSECONDS), "us");
     case Unit::MILLISECONDS:
@@ -192,18 +195,18 @@ inline std::string replace(std::string_view input)
         }
         else
         {
-            throw std::format_error(std::format("invalid timezone designator: '{}'", designator));
+            throw std::runtime_error(fmt::format("invalid timezone designator: '{}'", designator));
         }
         result.append(oss.str());
 
         const auto match_len = match.length(0);
         last_pos = pos + match_len;
         if (pos > 0 && std::isdigit(input[pos - 1]))
-            throw std::format_error(
-                std::format("invalid leading date time character: '[{}]{}'", input[pos - 1], match.str()));
+            throw std::runtime_error(
+                fmt::format("invalid leading date time character: '[{}]{}'", input[pos - 1], match.str()));
         if (static_cast<std::size_t>(last_pos) < input.length() && std::isdigit(input[last_pos]))
-            throw std::format_error(
-                std::format("invalid trailing date time character: '{}[{}]'", match.str(), input[last_pos]));
+            throw std::runtime_error(
+                fmt::format("invalid trailing date time character: '{}[{}]'", match.str(), input[last_pos]));
 
         match_end = match_begin;
         std::advance(match_end, match_len);
@@ -287,7 +290,7 @@ inline std::chrono::nanoseconds parse(std::string_view expression)
         }
         else
         {
-            throw std::format_error(std::format("invalid expression: '{}'", expression));
+            throw std::runtime_error(fmt::format("invalid expression: '{}'", expression));
         }
     }
 

@@ -6,15 +6,15 @@ jobs:
     docker:
       - image: ubuntu:lunar
     environment:
-        CC: /usr/bin/gcc-13
-        CXX: /usr/bin/g++-13
+        CC: /usr/bin/gcc-12
+        CXX: /usr/bin/g++-12
     steps:
       - checkout
       - run:
             name: Install dependencies
             command: |
                 apt-get update
-                apt-get install -y git curl libcurl4-openssl-dev cmake clang-format g++-13
+                apt-get install -y git curl libcurl4-openssl-dev cmake clang-format g++-12
       - run:
             name: Check clang-format
             command: |

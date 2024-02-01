@@ -30,12 +30,7 @@ int main(int argc, char *argv[])
         else
             std::cout << nanomath::format(ns) << std::endl;
     }
-    catch (const std::format_error &err)
-    {
-        std::cerr << err.what() << std::endl;
-        return EXIT_FAILURE;
-    }
-    catch (const std::runtime_error &err)
+    catch (const std::exception &err)
     {
         std::cerr << err.what() << std::endl;
         return EXIT_FAILURE;
