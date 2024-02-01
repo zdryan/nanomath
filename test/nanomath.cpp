@@ -64,7 +64,7 @@ TEST_F(NanoMathTest, parenthesized_duration_arithmetic)
 
 TEST_F(NanoMathTest, invalid_specifier)
 {
-    EXPECT_THROW(parse("1z"), std::format_error);
+    EXPECT_THROW(parse("1z"), std::runtime_error);
 }
 
 TEST_F(NanoMathTest, default_timezone_designator)

@@ -64,7 +64,7 @@ inline Unit string_to_unit(std::string_view unit)
     // clang-format on
     if (units.contains(unit))
         return units.at(unit);
-    throw std::format_error(fmt::format("unknown unit: '[{}]'", unit));
+    throw std::runtime_error(fmt::format("unknown unit: '[{}]'", unit));
     __builtin_unreachable();
 }
 
@@ -195,17 +195,17 @@ inline std::string replace(std::string_view input)
         }
         else
         {
-            throw std::format_error(fmt::format("invalid timezone designator: '{}'", designator));
+            throw std::runtime_error(fmt::format("invalid timezone designator: '{}'", designator));
         }
         result.append(oss.str());
 
         const auto match_len = match.length(0);
         last_pos = pos + match_len;
         if (pos > 0 && std::isdigit(input[pos - 1]))
-            throw std::format_error(
+            throw std::runtime_error(
                 fmt::format("invalid leading date time character: '[{}]{}'", input[pos - 1], match.str()));
         if (static_cast<std::size_t>(last_pos) < input.length() && std::isdigit(input[last_pos]))
-            throw std::format_error(
+            throw std::runtime_error(
                 fmt::format("invalid trailing date time character: '{}[{}]'", match.str(), input[last_pos]));
 
         match_end = match_begin;
@@ -290,7 +290,7 @@ inline std::chrono::nanoseconds parse(std::string_view expression)
         }
         else
         {
-            throw std::format_error(fmt::format("invalid expression: '{}'", expression));
+            throw std::runtime_error(fmt::format("invalid expression: '{}'", expression));
         }
     }
 
