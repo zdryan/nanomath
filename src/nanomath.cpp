@@ -8,11 +8,12 @@ int main(int argc, char *argv[])
     parser.add_argument("expression");
 
     std::string expression, format;
-    const auto formatted = parser.is_used("--format");
+    bool formatted = false;
     try
     {
         parser.parse_args(argc, argv);
         expression = parser.get<std::string>("expression");
+        formatted = parser.is_used("--format");
         if (formatted)
             format = parser.get<std::string>("--format");
     }
