@@ -15,10 +15,8 @@ nanomath --format ns '2004-11-23T12:30:00Z + 4Y - 10D - (12h + 30m)' # 122644800
 nanomath --format m '2008-11-12T00:00:00Z - 2004-11-23T12:30:00Z' # 2087250m
 ```
 
-- Supports `ns`, `us`, `ms`, `s`, `m`, `h`, `D`, `W`, `M` and `Y` suffixes.
+- Supports `ns`, `us`, `ms`, `s`, `m`, `h`, `D`, `W`, `M` and `Y`.
 - Timezone designators (according to the following [TZ identifiers](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones)) are supported, albeit with minimal testing.
-
-:wrench: *nanomath* is currently under active development. 
 
 ## Download
 ```bash
@@ -26,9 +24,9 @@ wget https://github.com/zdryan/nanomath/releases/download/v2024.02.03/nanomath-v
 tar -xf nanomath-v2024.02.03-linux.tar.bz2
 ```
 
-## Build & Install (Linux)
+## Install (`cmake`)
 ```bash
 git clone https://github.com/zdryan/nanomath
 cd nanomath
-cmake --build . --target install
+cmake --install . --config Release
 ```
